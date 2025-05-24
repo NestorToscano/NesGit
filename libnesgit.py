@@ -19,7 +19,9 @@ argparser = argparse.ArgumentParser(description="NesGit: My own Git implementati
 argsubparsers = argparser.add_subparsers(dest="Commands", help="subcommand")
 argsubparsers.required = True
 
+# Subcommands
 def main(argv=sys.argv[1:]): # argv is a list of command line arguments
+    """Main function to parse command line arguments and execute the corresponding command."""
     args = argparser.parse_args(argv) 
     match args.subcommand:
         case "add"          : cmd_add(args)
@@ -55,4 +57,29 @@ class GitRepository :
             raise Exception(f"Invalid repository path: {path}")
         
         self.config = configparser.ConfigParser()
-        config_file = repo_file(self, "config") # TBD / create config file function
+        config_file = repo_file(self, "config") # Path to the config file in the .git directory
+
+        if config_file and os.path.exists(config_file):
+            self.config.read([config_file]) # Read the config file if it exists
+        elif not force: 
+            raise Exception(f"Repository {path} does not exist")
+        
+        if not force: 
+            vers = int(self.config.get("core", "repositoryformatversion"))
+            if vers != 0:
+                raise Exception(f"Unsupported repository format version: {vers}")
+
+# Utility functions for working with Git repositories         
+def repo_path(repo, *path) :
+    """Returns a path relative to the repository's .git directory."""
+    return os.path.join(repo.git_dir, *path)
+
+def repo_file(repo, *path, mkdir=False) :
+    """Returns a file path relative to the repository's .git directory."""
+    if repo_dir(repo, *path[:-1], mkdir=mkdir):
+        return repo_path(repo, *path)
+    
+def repo_dir(repo, *path, mkdir=False) :
+    """Returns a directory path relative to the repository's .git directory."""
+    return None # TBD / create directory function
+
